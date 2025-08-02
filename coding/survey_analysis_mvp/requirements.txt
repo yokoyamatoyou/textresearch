@@ -1,0 +1,19 @@
+# Requirements for the survey analysis application
+pandas
+openpyxl
+customtkinter
+wordcloud
+matplotlib
+seaborn
+fpdf2
+jinja2
+spacy
+sudachipy
+sudachidict_core
+instructor
+pydantic
+openai>=1.0.0
+pydantic-settings
+python-dotenv
+google-cloud-secret-manager
+pytest
