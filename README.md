@@ -1,4 +1,4 @@
-# Aftercoding
+# textresearch
 
 This repository contains a prototype survey analysis tool that processes Japanese free-text responses.
 It leverages spaCy with SudachiPy and OpenAI's models to summarize sentiment, topics and actionable insights from Excel files.
