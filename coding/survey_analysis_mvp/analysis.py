@@ -18,6 +18,7 @@ from openai import AsyncOpenAI
 import spacy
 
 from config import settings
+from wc_tokenizer import tokenize_texts
 
 # Read API key from .env or environment variables
 openai.api_key = settings.OPENAI_API_KEY
@@ -447,7 +448,6 @@ async def summarize_results(
     Args:
         df_analyzed: DataFrame including analysis results.
         column_name: Original text column used for analysis.
-        wordcloud_type: Which subset of texts to use for the word cloud.
     """
     if "analysis_sentiment" not in df_analyzed.columns:
         return None, None
@@ -497,24 +497,28 @@ async def summarize_results(
             emotion_avg[emo] = 0.0  # 列がない場合は0
 
     # ワードクラウド用の単語リストを3種類生成
-    nlp = get_tokenizer("A")
-
-    def get_words(texts: list[str]) -> list[str]:
-        all_text = " ".join(texts)
-        doc = nlp(all_text)
-        return [token.text for token in doc if token.pos_ in ["NOUN", "VERB", "ADJ"] and len(token.text) > 1]
-
-    # 全体
     all_texts = df_analyzed[column_name].dropna().astype(str).tolist()
-    words_all = get_words(all_texts)
+    words_all = tokenize_texts(all_texts)
 
-    # ポジティブ
-    pos_texts = df_analyzed[df_analyzed["analysis_sentiment"].isin(["positive", "neutral"])][column_name].dropna().astype(str).tolist()
-    words_pos = get_words(pos_texts)
+    pos_texts = (
+        df_analyzed[df_analyzed["analysis_sentiment"].isin(["positive", "neutral"])][
+            column_name
+        ]
+        .dropna()
+        .astype(str)
+        .tolist()
+    )
+    words_pos = tokenize_texts(pos_texts)
 
-    # ネガティブ
-    neg_texts = df_analyzed[df_analyzed["analysis_sentiment"].isin(["negative", "neutral"])][column_name].dropna().astype(str).tolist()
-    words_neg = get_words(neg_texts)
+    neg_texts = (
+        df_analyzed[df_analyzed["analysis_sentiment"].isin(["negative", "neutral"])][
+            column_name
+        ]
+        .dropna()
+        .astype(str)
+        .tolist()
+    )
+    words_neg = tokenize_texts(neg_texts)
 
     wordcloud_words = {
         "all": words_all,

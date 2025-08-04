@@ -17,7 +17,8 @@ import pandas as pd
 from fpdf import FPDF, HTMLMixin
 from jinja2 import Environment, FileSystemLoader
 from wordcloud import WordCloud
-from sudachipy import dictionary, tokenizer as sudachi_tokenizer
+
+from wc_tokenizer import tokenize_texts
 
 from analysis import (
     ReportCommentary,
@@ -38,16 +39,6 @@ FONT_DIR = Path(__file__).resolve().parent / "fonts"
 FONT_REGULAR_PATH = FONT_DIR / "NotoSansJP-Regular.ttf"
 FONT_BOLD_PATH = FONT_DIR / "NotoSansJP-Bold.ttf"
 _FONT_CONFIGURED = False
-
-# Sudachi tokenizer and stopwords for word cloud
-SUDACHI_MODE = sudachi_tokenizer.Tokenizer.SplitMode.B
-_SUDACHI = dictionary.Dictionary().create()
-STOPWORDS_PATH = Path(__file__).resolve().parent / "stopwords_ja.txt"
-if STOPWORDS_PATH.exists():
-    with open(STOPWORDS_PATH, encoding="utf-8") as f:
-        STOPWORDS = set(w.strip() for w in f if w.strip())
-else:
-    STOPWORDS = set()
 
 
 # --- Matplotlib helper ------------------------------------------------------
@@ -389,19 +380,9 @@ def create_report(
             f.write(base64.b64decode(chart_base64))
 
     # --- Word cloud ------------------------------------------------------
-    def tokenize(texts: list[str]) -> list[str]:
-        tokens: list[str] = []
-        for text in texts:
-            for m in _SUDACHI.tokenize(text, SUDACHI_MODE):
-                if m.part_of_speech()[0] in ["名詞", "動詞", "形容詞"]:
-                    lemma = m.dictionary_form()
-                    if lemma not in STOPWORDS:
-                        tokens.append(lemma)
-        return tokens
-
     if wordcloud_type == "normal":
         texts = df[column_name].dropna().astype(str).tolist()
-        words = tokenize(texts)
+        words = tokenize_texts(texts)
         generate_wordcloud(words, os.path.join(output_dir, "wordcloud.png"))
         pos_wc = neg_wc = None
     else:
@@ -418,10 +399,12 @@ def create_report(
             .tolist()
         )
         generate_wordcloud(
-            tokenize(pos_texts), os.path.join(output_dir, "positive_wordcloud.png")
+            tokenize_texts(pos_texts),
+            os.path.join(output_dir, "positive_wordcloud.png"),
         )
         generate_wordcloud(
-            tokenize(neg_texts), os.path.join(output_dir, "negative_wordcloud.png")
+            tokenize_texts(neg_texts),
+            os.path.join(output_dir, "negative_wordcloud.png"),
         )
         pos_wc = os.path.join(output_dir, "positive_wordcloud.png")
         neg_wc = os.path.join(output_dir, "negative_wordcloud.png")
