@@ -8,6 +8,7 @@ import io
 import os
 import re
 import asyncio
+from pathlib import Path
 from datetime import datetime
 
 import matplotlib as mpl
@@ -33,9 +34,9 @@ COLOR_SECONDARY = (52, 152, 219)  # #3498db
 COLOR_TEXT = (51, 51, 51)  # #333333
 COLOR_LIGHT_GRAY = (242, 242, 242)  # #f2f2f2
 
-FONT_DIR = os.path.join(os.path.dirname(__file__), "fonts")
-FONT_REGULAR_PATH = os.path.join(FONT_DIR, "NotoSansJP-Regular.ttf")
-FONT_BOLD_PATH = os.path.join(FONT_DIR, "NotoSansJP-Bold.ttf")
+FONT_DIR = Path(__file__).resolve().parent / "fonts"
+FONT_REGULAR_PATH = FONT_DIR / "NotoSansJP-Regular.ttf"
+FONT_BOLD_PATH = FONT_DIR / "NotoSansJP-Bold.ttf"
 _FONT_CONFIGURED = False
 
 
@@ -47,13 +48,13 @@ def set_japanese_font() -> bool:
     global _FONT_CONFIGURED
     if _FONT_CONFIGURED:
         return True
-    if not os.path.exists(FONT_REGULAR_PATH):
+    if not FONT_REGULAR_PATH.exists():
         mpl.rcParams["axes.unicode_minus"] = False
         return False
 
     try:
-        mpl.font_manager.fontManager.addfont(FONT_REGULAR_PATH)
-        font_name = mpl.font_manager.FontProperties(fname=FONT_REGULAR_PATH).get_name()
+        mpl.font_manager.fontManager.addfont(str(FONT_REGULAR_PATH))
+        font_name = mpl.font_manager.FontProperties(fname=str(FONT_REGULAR_PATH)).get_name()
         mpl.rcParams["font.family"] = font_name
         mpl.rcParams["font.sans-serif"] = [font_name]
         _FONT_CONFIGURED = True
@@ -147,12 +148,12 @@ class ReportPDF(FPDF):
 
     def setup_fonts(self) -> None:
         """Register Japanese fonts."""
-        if not (os.path.exists(FONT_REGULAR_PATH) and os.path.exists(FONT_BOLD_PATH)):
+        if not (FONT_REGULAR_PATH.exists() and FONT_BOLD_PATH.exists()):
             raise FileNotFoundError(
-                "NotoSansJPフォントファイルが見つかりません。fontsディレクトリを確認してください。"
+                "NotoSansJPフォントファイルが見つかりません。fontsディレクトリを確認してください。",
             )
-        self.add_font("NotoSansJP", "", FONT_REGULAR_PATH, uni=True)
-        self.add_font("NotoSansJP", "B", FONT_BOLD_PATH, uni=True)
+        self.add_font("NotoSansJP", "", str(FONT_REGULAR_PATH), uni=True)
+        self.add_font("NotoSansJP", "B", str(FONT_BOLD_PATH), uni=True)
 
     # Page builders ------------------------------------------------------
     def create_cover_page(self, analysis_target: str = "（分析対象未設定）") -> None:
@@ -325,7 +326,7 @@ def generate_wordcloud(words: list[str], output_path: str, exclude_words: list[s
         print("ワードクラウドを生成するための単語がありません。")
         return
 
-    font_path = FONT_REGULAR_PATH if os.path.exists(FONT_REGULAR_PATH) else None
+    font_path = str(FONT_REGULAR_PATH) if FONT_REGULAR_PATH.exists() else None
     if not font_path:
         print("日本語フォントが見つからないため、ワードクラウドを生成できません。")
         return
